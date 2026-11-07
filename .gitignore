@@ -1,0 +1,8 @@
+/dist/
+/release/
+*.user
+*.suo
+diagnostic.txt
+*.pfx
+*.p12
+*.key
