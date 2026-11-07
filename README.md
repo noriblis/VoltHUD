@@ -42,7 +42,7 @@ Open **⋯** to adjust the widget's appearance, startup behaviour and low batter
 
 ### Tray hover preview
 
-<img src="assets/tray-hover-preview.svg" alt="Eight sample connected devices alongside the VoltHUD tray tooltip showing 8 devices" width="600">
+<img src="assets/tray-hover-preview.svg" alt="Five sample connected devices alongside the VoltHUD tray tooltip showing 5 devices" width="600">
 
 Hover over the blue battery tray icon for a quick status. With one device, the tooltip shows its name and battery percentage; with multiple devices, it shows the device count. This is an illustrative preview—Windows controls the tooltip's appearance. Double-click the icon to show the widget, or right-click it to open settings.
 
