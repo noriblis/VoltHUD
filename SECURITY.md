@@ -6,10 +6,11 @@ VoltHUD is an unsigned preview. Do not interpret a clean scan, a checksum, or op
 
 - Reads battery, identity and feature-discovery data from local Logitech HID interfaces.
 - Lists connected Bluetooth endpoints and reads Windows battery values or the standard Bluetooth Battery Service.
-- Saves window position and its always-on-top preference in the user's local application data.
+- Saves position, opacity, size, start-minimized, always-on-top, theme and notification preferences locally.
+- Saves bounded, hashed device identities locally to suppress repeated low-battery warnings across restarts. Requests native Windows notifications only when enabled.
 - Creates a diagnostic text file only when explicitly requested through `--diagnose`.
 
-It does not require administrator privileges, install drivers or certificates, change security settings, remap inputs, register itself at startup, inject into processes, download code, self-update, or send telemetry. It contains no executable packer or code obfuscation. Read-only protocol queries are distinct from hardware settings commands; battery/feature/name reads are the only queries used.
+It does not require administrator privileges, install drivers or certificates, change security settings, remap inputs, register startup without an explicit opt-in, inject into processes, download code, self-update, or send telemetry. It contains no executable packer or code obfuscation. Read-only protocol queries are distinct from hardware settings commands; battery/feature/name reads are the only queries used.
 
 ## Signing and warnings
 

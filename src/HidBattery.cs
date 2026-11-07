@@ -18,6 +18,7 @@ namespace VoltHUD
         public string Kind = "device";
         public string Detail;
         public DateTime Updated;
+        public bool NeedsIdentity;
         public override string ToString() { return Name + " | " + (Percent.HasValue ? Percent + "%" : "unknown") + " | " + State; }
     }
 
@@ -25,13 +26,43 @@ namespace VoltHUD
     public static class BatteryMonitor
     {
         public static Action<string> Log = delegate { };
+        static readonly Dictionary<string, Tuple<string,string>> IdentityCache = new Dictionary<string, Tuple<string,string>>();
         public static string DeviceName(string name)
         {
-            if (String.IsNullOrWhiteSpace(name)) return "Logitech peripheral";
+            if (String.IsNullOrWhiteSpace(name)) return "Wireless peripheral";
             name = name.Trim();
             return name.StartsWith("Logitech", StringComparison.OrdinalIgnoreCase) ? name : "Logitech " + name;
         }
         public static List<BatteryReading> Scan()
+        {
+            // HID replies carry a small client ID. Two VoltHUD processes must not
+            // consume each other's feature/name replies during diagnostics or previews.
+            using (var gate = new System.Threading.Mutex(false, @"Local\VoltHUD.BatteryScan"))
+            {
+                bool acquired = false;
+                try
+                {
+                    try { acquired = gate.WaitOne(TimeSpan.FromSeconds(60)); }
+                    catch (System.Threading.AbandonedMutexException) { acquired = true; }
+                    if (!acquired) throw new TimeoutException("Another battery scan is still running.");
+                    return ScanCore();
+                }
+                finally { if (acquired) gate.ReleaseMutex(); }
+            }
+        }
+        public static string DecodeDeviceName(byte[] bytes)
+        {
+            if (bytes == null) return null;
+            try
+            {
+                string name = new UTF8Encoding(false, true).GetString(bytes).TrimEnd('\0').Trim();
+                if (String.IsNullOrWhiteSpace(name)) return null;
+                foreach (char value in name) if (Char.IsControl(value)) return null;
+                return name;
+            }
+            catch (DecoderFallbackException) { return null; }
+        }
+        static List<BatteryReading> ScanCore()
         {
             var readings = new List<BatteryReading>();
             var seen = new HashSet<string>();
@@ -59,13 +90,15 @@ namespace VoltHUD
                                 legacy = DecodeRegister(0x0D, hid.Register(device, 0x0D));
                                 if (legacy == null) legacy = DecodeRegister(7, hid.Register(device, 7));
                                 if (legacy == null) continue;
-                                legacy.Name = "Logitech peripheral · slot " + device;
+                                legacy.Name = "Wireless peripheral · slot " + device;
                                 legacy.Key = path + ":" + device;
                                 legacy.Updated = DateTime.Now;
                                 readings.Add(legacy);
                                 continue;
                             }
-                            if (hid.Request(device, 0, 0x10, 0, 0, 0x42) == null) continue;
+                            var ping = hid.Request(device, 0, 0x10, 0, 0, 0x42);
+                            if (ping == null && (device == 1 || device == 255)) { System.Threading.Thread.Sleep(80); ping = hid.Request(device, 0, 0x10, 0, 0, 0x42); }
+                            if (ping == null) continue;
                             int feature = hid.Feature(device, 0x1004);
                             int protocol = 0x1004;
                             if (feature == 0) { feature = hid.Feature(device, 0x1000); protocol = 0x1000; }
@@ -74,10 +107,17 @@ namespace VoltHUD
                             if (feature == 0) continue;
                             int nameFeature = hid.Feature(device, 5);
                             string name = hid.Product;
-                            if (nameFeature != 0)
+                            bool nameRead = false, typeRead = false;
+                            for (int attempt = 0; attempt < 3 && (!nameRead || !typeRead); attempt++)
                             {
-                                var type = hid.Request(device, (byte)nameFeature, 0x20);
-                                if (type != null) kind = type[4] == 3 || type[4] == 4 || type[4] == 5 ? "mouse" : type[4] == 0 || type[4] == 2 ? "keyboard" : "device";
+                                if (attempt > 0) { System.Threading.Thread.Sleep(80); if (nameFeature == 0) nameFeature = hid.Feature(device, 5); }
+                                if (nameFeature == 0) continue;
+                                if (!typeRead)
+                                {
+                                    var type = hid.Request(device, (byte)nameFeature, 0x20);
+                                    if (type != null) { typeRead = true; kind = type[4] == 3 || type[4] == 4 || type[4] == 5 ? "mouse" : type[4] == 0 || type[4] == 2 ? "keyboard" : "device"; }
+                                }
+                                if (nameRead) continue;
                                 var count = hid.Request(device, (byte)nameFeature, 0);
                                 if (count != null && count[4] > 0 && count[4] < 100)
                                 {
@@ -89,7 +129,11 @@ namespace VoltHUD
                                         if (part == null) break;
                                         for (int i = 4; i < part.Length && text.Count < length; i++) text.Add(part[i]);
                                     }
-                                    if (text.Count == length) name = Encoding.UTF8.GetString(text.ToArray()).TrimEnd('\0');
+                                    if (text.Count == length)
+                                    {
+                                        string decoded = DecodeDeviceName(text.ToArray());
+                                        if (decoded != null) { name = decoded; nameRead = true; }
+                                    }
                                 }
                             }
                             byte[] result = hid.Request(device, (byte)feature, protocol == 0x1004 ? (byte)0x10 : (byte)0);
@@ -98,10 +142,32 @@ namespace VoltHUD
                             if (reading == null) continue;
                             reading.Name = DeviceName(name);
                             reading.Kind = hid.Headset || protocol == 0x1F20 ? "headset" : kind;
+                            reading.NeedsIdentity = !nameRead || !typeRead;
                             int infoFeature = hid.Feature(device, 3);
                             byte[] info = infoFeature == 0 ? null : hid.Request(device, (byte)infoFeature, 0);
                             // A unit ID distinguishes identical models and merges cable/receiver duplicates.
                             string identity = info != null && info.Length >= 9 && (info[5] | info[6] | info[7] | info[8]) != 0 ? BitConverter.ToString(info, 5, 4) : path + ":" + device;
+                            bool stableIdentity = info != null && info.Length >= 9 && (info[5] | info[6] | info[7] | info[8]) != 0;
+                            if (stableIdentity)
+                            {
+                                Tuple<string,string> cached;
+                                if (reading.NeedsIdentity && IdentityCache.TryGetValue(identity, out cached))
+                                {
+                                    reading.Name = cached.Item1; reading.Kind = cached.Item2; reading.NeedsIdentity = false;
+                                }
+                                else if (!reading.NeedsIdentity)
+                                {
+                                    if (IdentityCache.Count >= 256 && !IdentityCache.ContainsKey(identity)) IdentityCache.Clear();
+                                    IdentityCache[identity] = Tuple.Create(reading.Name, reading.Kind);
+                                }
+                            }
+                            if (reading.NeedsIdentity) Log("Battery answered before device identity was ready; discovery will retry automatically.");
+                            if (reading.NeedsIdentity)
+                            {
+                                if (!nameRead) reading.Name = "Identifying device…";
+                                reading.Detail = "Battery received; the device name or type is still being discovered.";
+                                reading.State = "Identifying device…";
+                            }
                             if (!seen.Add(identity)) continue;
                             reading.Key = identity;
                             reading.Updated = DateTime.Now;

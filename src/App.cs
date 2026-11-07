@@ -7,15 +7,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using System.Windows.Interop;
+using Microsoft.Win32;
 using Forms = System.Windows.Forms;
 
 [assembly: AssemblyTitle("VoltHUD")]
-[assembly: AssemblyDescription("A quiet battery widget for Logitech and Bluetooth peripherals")]
+[assembly: AssemblyDescription("A quiet battery widget for connected peripherals")]
 [assembly: AssemblyCompany("VoltHUD contributors")]
 [assembly: AssemblyProduct("VoltHUD")]
 [assembly: AssemblyVersion("0.1.1.0")]
@@ -30,54 +33,60 @@ namespace VoltHUD
 <Grid xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' Margin='12'>
  <Grid.Resources>
   <Style TargetType='Button'>
-   <Setter Property='Foreground' Value='#9098A6'/><Setter Property='Background' Value='Transparent'/><Setter Property='BorderThickness' Value='0'/><Setter Property='Cursor' Value='Hand'/><Setter Property='Focusable' Value='True'/>
-   <Setter Property='Template'><Setter.Value><ControlTemplate TargetType='Button'><Border x:Name='Hover' Background='{TemplateBinding Background}' CornerRadius='7' Padding='6,2'><ContentPresenter HorizontalAlignment='Center' VerticalAlignment='Center'/></Border><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Hover' Property='Background' Value='#29303B'/><Setter Property='Foreground' Value='White'/></Trigger><Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='Hover' Property='Background' Value='#29303B'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+   <Setter Property='Foreground' Value='{DynamicResource C9098A6}'/><Setter Property='Background' Value='Transparent'/><Setter Property='BorderThickness' Value='0'/><Setter Property='Cursor' Value='Hand'/><Setter Property='Focusable' Value='True'/>
+   <Setter Property='Template'><Setter.Value><ControlTemplate TargetType='Button'><Border x:Name='Hover' Background='{TemplateBinding Background}' CornerRadius='7' Padding='6,2'><ContentPresenter HorizontalAlignment='Center' VerticalAlignment='Center'/></Border><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Hover' Property='Background' Value='{DynamicResource C29303B}'/><Setter Property='Foreground' Value='{DynamicResource CFFFFFF}'/></Trigger><Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='Hover' Property='Background' Value='{DynamicResource C29303B}'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
   </Style>
  </Grid.Resources>
- <Border Background='#171B23' BorderBrush='#343B47' BorderThickness='1' CornerRadius='18'>
+ <Border Background='{DynamicResource C171B23}' BorderBrush='{DynamicResource C343B47}' BorderThickness='1' CornerRadius='18'>
   <Border.Effect><DropShadowEffect BlurRadius='15' ShadowDepth='3' Opacity='0.28'/></Border.Effect>
   <Grid Margin='22,17,22,15'>
-   <Grid.RowDefinitions><RowDefinition Height='28'/><RowDefinition Height='30'/><RowDefinition Height='66'/><RowDefinition Height='17'/><RowDefinition Height='29'/></Grid.RowDefinitions>
+   <Grid.RowDefinitions><RowDefinition Height='28'/><RowDefinition Height='Auto'/><RowDefinition Height='25'/><RowDefinition Height='22'/></Grid.RowDefinitions>
    <Grid x:Name='Header' Background='Transparent'>
-    <StackPanel Orientation='Horizontal' VerticalAlignment='Top'><Ellipse Width='7' Height='7' Fill='#00B8FC' Margin='0,6,8,0' VerticalAlignment='Top'/><TextBlock Text='VOLTHUD' Foreground='#9FA8B7' FontSize='10' FontWeight='SemiBold' VerticalAlignment='Top' Margin='0,2,0,0'/></StackPanel>
+    <StackPanel Orientation='Horizontal' VerticalAlignment='Top'><Ellipse Width='7' Height='7' Fill='{DynamicResource C00B8FC}' Margin='0,6,8,0' VerticalAlignment='Top'/><TextBlock x:Name='BrandCaption' Text='VOLTHUD' Foreground='{DynamicResource C9FA8B7}' FontSize='10' FontWeight='SemiBold' VerticalAlignment='Top' Margin='0,2,0,0'/></StackPanel>
     <StackPanel Orientation='Horizontal' HorizontalAlignment='Right' Margin='0,-5,-8,0' VerticalAlignment='Top'>
      <Button x:Name='MenuButton' Content='&#x22EF;' Width='28' Height='25' FontSize='19' ToolTip='Options' AutomationProperties.Name='Options'/>
      <Button x:Name='HideButton' Content='&#x2212;' Width='28' Height='25' FontSize='16' ToolTip='Hide to tray' AutomationProperties.Name='Hide to tray'/>
     </StackPanel>
    </Grid>
-   <TextBlock x:Name='DeviceName' Grid.Row='1' Text='Looking for your mouse' Foreground='#E8ECF2' FontSize='15' FontWeight='Medium' TextTrimming='CharacterEllipsis' VerticalAlignment='Center'/>
-   <Grid Grid.Row='2'>
-    <StackPanel Orientation='Horizontal' VerticalAlignment='Center'><TextBlock x:Name='Level' Text='—' Foreground='#F4F7FC' FontSize='51' FontWeight='SemiBold'/><TextBlock x:Name='Percent' Text='%' Foreground='#8791A2' FontSize='22' Margin='4,0,0,11' VerticalAlignment='Bottom'/></StackPanel>
-    <Canvas x:Name='DeviceIcon' HorizontalAlignment='Right' VerticalAlignment='Center' Width='72' Height='68' Margin='0,2,-4,0'>
-     <Path Stroke='#677385' StrokeThickness='1.6' Data='M 26,2 C 12,2 7,12 7,25 L 7,39 C 7,53 15,60 26,60 C 38,60 46,53 46,39 L 46,25 C 46,12 41,2 26,2 Z'/>
-     <Path Stroke='#677385' StrokeThickness='1.3' Data='M 26,3 L 26,27 M 8,27 L 45,27'/>
-     <Border Width='4' Height='12' CornerRadius='2' Background='#00B8FC' Canvas.Left='24' Canvas.Top='10'/>
-    </Canvas>
+   <StackPanel x:Name='DeviceRows' Grid.Row='1'/>
+   <Grid Grid.Row='2' VerticalAlignment='Bottom'>
+    <TextBlock x:Name='Summary' Text='Checking devices' Foreground='{DynamicResource CA0AABA}' FontSize='10'/>
+    <Button x:Name='RefreshButton' Content='Refresh' Foreground='{DynamicResource C778395}' FontSize='10' HorizontalAlignment='Right' Padding='0' Margin='0,0,-6,-4' ToolTip='Check battery now' AutomationProperties.Name='Refresh battery'/>
    </Grid>
-   <Grid Grid.Row='3' VerticalAlignment='Center' Height='5'><Border Background='#303743' CornerRadius='2.5'/><Border x:Name='BatteryBar' Background='#00B8FC' CornerRadius='2.5' HorizontalAlignment='Left' Width='0'/></Grid>
-   <Grid Grid.Row='4' VerticalAlignment='Bottom'>
-    <StackPanel Orientation='Horizontal'><Ellipse x:Name='StateDot' Fill='#788391' Height='5' Width='5' Margin='0,0,6,0'/><TextBlock x:Name='State' Text='Checking connection' Foreground='#A0AABA' FontSize='11'/></StackPanel>
-    <Button x:Name='RefreshButton' Content='Refresh' Foreground='#778395' FontSize='10' HorizontalAlignment='Right' Padding='0' Margin='0,0,-6,-4' ToolTip='Check battery now' AutomationProperties.Name='Refresh battery'/>
-   </Grid>
+   <TextBlock Grid.Row='3' Text='Battery % updates every 5 minutes' Foreground='{DynamicResource C929EAE}' FontSize='10' HorizontalAlignment='Center' VerticalAlignment='Bottom'/>
   </Grid>
  </Border>
 </Grid>";
         readonly Grid root;
-        readonly TextBlock deviceName, level, state;
-        readonly Border bar;
-        readonly System.Windows.Shapes.Ellipse dot;
+        readonly Grid surface;
+        readonly StackPanel deviceRows;
+        readonly TextBlock state;
         readonly Forms.NotifyIcon tray;
         readonly DispatcherTimer timer;
         DispatcherTimer activationTimer;
         readonly string settingsPath;
-        readonly MenuItem pin;
-        readonly MenuItem devices;
+        readonly string alertHistoryPath;
+        bool trayDisposed;
+        Border settingsPanel;
+        Popup settingsPopup;
         List<BatteryReading> readings = new List<BatteryReading>();
-        bool busy, exiting;
-        int selected;
-        public Widget()
+        bool busy, exiting, monitoringStarted;
+        bool lowBatteryNotifications;
+        readonly LowBatteryAlerts lowBatteryAlerts = new LowBatteryAlerts();
+        public bool StartMinimized { get; private set; }
+        double widgetScale = 1.0;
+        readonly bool demoMode;
+        string themeMode = "Dark";
+        UserPreferenceChangedEventHandler themeChanged;
+        DateTime settingsButtonDismissedAt = DateTime.MinValue;
+        DispatcherTimer discoveryTimer;
+        int discoveryAttempts;
+        HwndSource deviceSource;
+        int themeRefreshPending;
+        public Widget(bool demo = false)
         {
-            Title = "VoltHUD"; Width = 346; Height = 248;
+            demoMode = demo;
+            Title = "VoltHUD"; Width = 346; Height = 222;
             using (var iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("VoltHUD.AppIcon.ico"))
             {
                 var decoder = BitmapDecoder.Create(iconStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
@@ -86,39 +95,143 @@ namespace VoltHUD
             ResizeMode = ResizeMode.NoResize; WindowStyle = WindowStyle.None;
             AllowsTransparency = true; Background = Brushes.Transparent;
             ShowInTaskbar = false; FontFamily = new FontFamily("Segoe UI");
-            root = (Grid)XamlReader.Parse(Layout); Content = root;
-            deviceName = (TextBlock)root.FindName("DeviceName"); level = (TextBlock)root.FindName("Level");
-            state = (TextBlock)root.FindName("State"); bar = (Border)root.FindName("BatteryBar");
-            dot = (System.Windows.Shapes.Ellipse)root.FindName("StateDot");
+            root = (Grid)XamlReader.Parse(Layout);
+            surface = new Grid { Width = 346, Height = 222 };
+            surface.Children.Add(root);
+            Content = new Viewbox { Child = surface, Stretch = Stretch.Uniform };
+            if (demoMode) ((TextBlock)root.FindName("BrandCaption")).Text = "VOLTHUD · SIMULATION";
+            deviceRows = (StackPanel)root.FindName("DeviceRows");
+            state = (TextBlock)root.FindName("Summary");
             settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VoltHUD", "settings.txt");
+            alertHistoryPath = Path.Combine(Path.GetDirectoryName(settingsPath), "low-battery-alerts.txt");
+            if (!demoMode)
+            {
+                try { lowBatteryAlerts.Restore(File.ReadLines(alertHistoryPath)); }
+                catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
             Left = SystemParameters.WorkArea.Right - Width - 24; Top = SystemParameters.WorkArea.Bottom - Height - 24;
-            LoadSettings();
-            var menu = new ContextMenu();
-            menu.Items.Add(Item("Refresh battery", delegate { Refresh(); }));
-            devices = new MenuItem { Header = "Devices", IsEnabled = false }; menu.Items.Add(devices);
-            pin = Item("Always on top", delegate { Topmost = pin.IsChecked; SaveSettings(); });
-            pin.IsCheckable = true; pin.IsChecked = Topmost; menu.Items.Add(pin);
-            menu.Items.Add(new Separator());
-            menu.Items.Add(Item("About VoltHUD", delegate { MessageBox.Show(this, "VoltHUD 0.1.1 preview\n\nBattery levels for Logitech and Bluetooth peripherals.\nNo internet access or telemetry.\n\nDrag the header to move. Hide to keep it in the tray.\nOptions → Devices switches between peripherals.\nBattery refreshes every 60 seconds.\n\nIndependent project; not affiliated with Logitech.", "About VoltHUD", MessageBoxButton.OK, MessageBoxImage.Information); }));
-            menu.Items.Add(Item("Quit", delegate { Exit(); }));
-            root.ContextMenu = menu;
-            ((Button)root.FindName("MenuButton")).Click += delegate { menu.PlacementTarget = (Button)root.FindName("MenuButton"); menu.IsOpen = true; };
-            ((Button)root.FindName("HideButton")).Click += delegate { SaveSettings(); Hide(); };
+            if (!demoMode) LoadSettings();
+            deviceRows.Children.Add(new TextBlock { Text = "Detecting connected devices…", Height = 88, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap, Foreground = Brush("#A0AABA"), FontSize = 12 }); UpdateWidgetSize();
+            ((Button)root.FindName("MenuButton")).Click += delegate { ToggleSettings(); };
+            root.MouseRightButtonUp += delegate(object sender, MouseButtonEventArgs e) { OpenSettings(); e.Handled = true; };
+            ((Button)root.FindName("HideButton")).Click += delegate { if (settingsPopup != null) settingsPopup.IsOpen = false; SaveSettings(); Hide(); };
             ((Button)root.FindName("RefreshButton")).Click += delegate { Refresh(); };
             ((Grid)root.FindName("Header")).MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e) { if (e.OriginalSource is TextBlock || e.OriginalSource is Grid || e.OriginalSource is System.Windows.Shapes.Ellipse) { DragMove(); ClampPosition(); SaveSettings(); } };
+
             tray = new Forms.NotifyIcon { Text = "VoltHUD — checking battery", Icon = MakeIcon(), Visible = true };
-            var trayMenu = new Forms.ContextMenuStrip();
-            trayMenu.Items.Add("Show widget", null, delegate { ShowWidget(); });
-            trayMenu.Items.Add("Refresh battery", null, delegate { Dispatcher.BeginInvoke(new Action(Refresh)); });
-            trayMenu.Items.Add("Quit", null, delegate { Dispatcher.BeginInvoke(new Action(Exit)); });
-            tray.ContextMenuStrip = trayMenu;
+            tray.MouseUp += delegate(object sender, Forms.MouseEventArgs e) { if (e.Button == Forms.MouseButtons.Right) Dispatcher.BeginInvoke(new Action(delegate { ShowWidget(); OpenSettings(); })); };
             tray.DoubleClick += delegate { Dispatcher.BeginInvoke(new Action(ShowWidget)); };
-            timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(60) }; timer.Tick += delegate { Refresh(); };
-            Loaded += delegate { ClampPosition(); timer.Start(); Refresh(); };
-            Closing += delegate { if (!exiting) { SaveSettings(); } timer.Stop(); if (activationTimer != null) activationTimer.Stop(); tray.Visible = false; tray.Dispose(); };
+            tray.BalloonTipClicked += delegate { Dispatcher.BeginInvoke(new Action(ShowWidget)); };
+            timer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(5) }; timer.Tick += delegate { Refresh(); };
+            discoveryTimer = new DispatcherTimer();
+            discoveryTimer.Tick += delegate { discoveryTimer.Stop(); if (busy) { ScheduleDiscovery(1); return; } Refresh(); };
+            SourceInitialized += delegate
+            {
+                deviceSource = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+                if (deviceSource != null) deviceSource.AddHook(DeviceMessages);
+            };
+            themeChanged = delegate { QueueWindowsThemeRefresh(); };
+            SystemEvents.UserPreferenceChanged += themeChanged;
+            ApplyTheme();
+            Loaded += delegate { StartMonitoring(); };
+            Closing += delegate { exiting = true; if (settingsPopup != null) settingsPopup.IsOpen = false; SaveSettings(); SaveAlertHistory(); timer.Stop(); discoveryTimer.Stop(); SystemEvents.UserPreferenceChanged -= themeChanged; if (deviceSource != null) deviceSource.RemoveHook(DeviceMessages); if (activationTimer != null) activationTimer.Stop(); DisposeTray(); };
             KeyDown += delegate(object sender, KeyEventArgs e) { if (e.Key == Key.Escape) Hide(); if (e.Key == Key.F5) Refresh(); };
         }
-        static MenuItem Item(string name, Action action) { var item = new MenuItem { Header = name }; item.Click += delegate { action(); }; return item; }
+        void EnsureSettings()
+        {
+            if (settingsPanel != null) return;
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("VoltHUD.Settings.xaml")) settingsPanel = (Border)XamlReader.Load(stream);
+            foreach (string mode in new[] { "Dark", "Light", "System" })
+            {
+                var choice = (RadioButton)settingsPanel.FindName("Theme" + mode);
+                choice.IsChecked = themeMode == mode;
+                choice.Checked += delegate { themeMode = mode; ApplyTheme(); SaveSettings(); };
+            }
+            var optionsButton = (Button)root.FindName("MenuButton");
+            settingsPopup = new Popup { Child = settingsPanel, PlacementTarget = optionsButton, Placement = PlacementMode.Bottom, AllowsTransparency = true, StaysOpen = false, HorizontalOffset = -250, VerticalOffset = 4 };
+            settingsPopup.Opened += delegate { ((RadioButton)settingsPanel.FindName("Theme" + themeMode)).Focus(); };
+            var opacitySlider = (Slider)settingsPanel.FindName("OpacitySlider");
+            var opacityValue = (TextBlock)settingsPanel.FindName("OpacityValue");
+            opacitySlider.Value = Opacity * 100; opacityValue.Text = Math.Round(opacitySlider.Value) + "%";
+            opacitySlider.ValueChanged += delegate { Opacity = opacitySlider.Value / 100.0; opacityValue.Text = Math.Round(opacitySlider.Value) + "%"; SaveSettings(); };
+            var sizeSlider = (Slider)settingsPanel.FindName("SizeSlider");
+            var sizeValue = (TextBlock)settingsPanel.FindName("SizeValue");
+            sizeSlider.Value = widgetScale * 100; sizeValue.Text = Math.Round(sizeSlider.Value) + "%";
+            sizeSlider.ValueChanged += delegate { widgetScale = sizeSlider.Value / 100.0; UpdateWidgetSize(); sizeValue.Text = Math.Round(sizeSlider.Value) + "%"; SaveSettings(); };
+            var pin = (CheckBox)settingsPanel.FindName("AlwaysOnTop");
+            pin.IsChecked = Topmost; pin.Click += delegate { Topmost = pin.IsChecked == true; SaveSettings(); };
+            var startup = (CheckBox)settingsPanel.FindName("StartWithWindows");
+            try { startup.IsChecked = StartupRegistration.Enabled; } catch { startup.IsEnabled = false; }
+            if (demoMode) startup.IsEnabled = false;
+            startup.Click += delegate
+            {
+                try { StartupRegistration.SetEnabled(startup.IsChecked == true); }
+                catch { startup.IsChecked = !startup.IsChecked; ShowSettingsMessage("Windows couldn't change this startup setting. Your other settings are saved."); }
+            };
+            var minimized = (CheckBox)settingsPanel.FindName("StartInTray");
+            minimized.IsChecked = StartMinimized; minimized.Click += delegate { StartMinimized = minimized.IsChecked == true; SaveSettings(); };
+            var notifications = (CheckBox)settingsPanel.FindName("LowBatteryNotifications");
+            notifications.IsChecked = lowBatteryNotifications;
+            notifications.IsEnabled = !demoMode;
+            notifications.Click += delegate { lowBatteryNotifications = notifications.IsChecked == true; SaveSettings(); NotifyLowBattery(); };
+            ((Button)settingsPanel.FindName("CloseSettings")).Click += delegate { settingsPopup.IsOpen = false; optionsButton.Focus(); };
+            ((Button)settingsPanel.FindName("RefreshNow")).Click += delegate { Refresh(); };
+            ((Button)settingsPanel.FindName("AboutButton")).Click += delegate { ShowSettingsMessage("VoltHUD 0.1.1 preview\nAll your connected devices, together.\nBattery levels refresh every 5 minutes.\nNo internet access or telemetry.\nIndependent project."); };
+            ((Button)settingsPanel.FindName("QuitButton")).Click += delegate { settingsPopup.IsOpen = false; Exit(); };
+            settingsPanel.PreviewKeyDown += delegate(object sender, KeyEventArgs e) { if (e.Key == Key.Escape) { settingsPopup.IsOpen = false; optionsButton.Focus(); e.Handled = true; } };
+            settingsPopup.Closed += delegate(object sender, EventArgs e)
+            {
+                var point = Mouse.GetPosition(optionsButton);
+                if (Mouse.LeftButton == MouseButtonState.Pressed && point.X >= 0 && point.Y >= 0 && point.X <= optionsButton.ActualWidth && point.Y <= optionsButton.ActualHeight) settingsButtonDismissedAt = DateTime.UtcNow;
+                // Popup controls and their backing window are needed only while settings is open.
+                var closed = (Popup)sender; closed.Child = null;
+                if (Object.ReferenceEquals(settingsPopup, closed)) { settingsPopup = null; settingsPanel = null; }
+            };
+            ThemePalette.Apply(settingsPanel);
+
+        }
+        void OpenSettings() { EnsureSettings(); settingsPopup.IsOpen = true; }
+        void ToggleSettings()
+        {
+            bool justDismissed = DateTime.UtcNow - settingsButtonDismissedAt < TimeSpan.FromMilliseconds(500);
+            settingsButtonDismissedAt = DateTime.MinValue;
+            if (justDismissed) return;
+            EnsureSettings(); settingsPopup.IsOpen = !settingsPopup.IsOpen;
+        }
+        void ShowSettingsMessage(string text) { var message = (TextBlock)settingsPanel.FindName("SettingsMessage"); message.Text = text; message.Visibility = Visibility.Visible; }
+        void ApplyTheme()
+        {
+            ThemePalette.Configure(themeMode);
+            ThemePalette.Apply(root); if (settingsPanel != null) ThemePalette.Apply(settingsPanel);
+            if (readings.Count == 0 && (!monitoringStarted || busy))
+            {
+                deviceRows.Children.Clear();
+                deviceRows.Children.Add(new TextBlock { Text = "Detecting connected devices…", Height = 88, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap, Foreground = Brush("#A0AABA"), FontSize = 12 });
+            }
+            else BuildRows(deviceRows, readings);
+        }
+        void QueueWindowsThemeRefresh()
+        {
+            if (exiting || themeMode != "System" || Dispatcher.HasShutdownStarted || Interlocked.Exchange(ref themeRefreshPending,1) != 0) return;
+            Dispatcher.BeginInvoke(new Action(delegate { Interlocked.Exchange(ref themeRefreshPending,0); if (!exiting && themeMode == "System") ApplyTheme(); }));
+        }
+        void ScheduleDiscovery(int seconds)
+        {
+            if (demoMode || exiting) return;
+            discoveryTimer.Stop(); discoveryTimer.Interval = TimeSpan.FromSeconds(seconds); discoveryTimer.Start();
+        }
+        IntPtr DeviceMessages(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (message == 0x0219) { discoveryAttempts = 0; ScheduleDiscovery(2); }
+            if (message == 0x0320 || message == 0x001A) QueueWindowsThemeRefresh();
+            return IntPtr.Zero;
+        }
+        void StartMonitoring()
+        {
+            if (monitoringStarted) return;
+            monitoringStarted = true; new WindowInteropHelper(this).EnsureHandle(); ClampPosition(); timer.Start(); Refresh();
+        }
+        public void StartInTray() { StartMonitoring(); }
         public void ListenForActivation(EventWaitHandle signal)
         {
             activationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -134,56 +247,127 @@ namespace VoltHUD
             var refresh = (Button)root.FindName("RefreshButton"); refresh.IsEnabled = false; refresh.Content = "Checking…";
             try
             {
-                var latest = await Task.Run(() => BatteryMonitor.Scan());
+                var latest = demoMode ? SampleDevices() : await Task.Run(() => BatteryMonitor.Scan());
                 if (exiting) return;
-                string previous = readings.Count > selected ? readings[selected].Key : null;
-                readings = latest; int same = readings.FindIndex(r => r.Key == previous);
-                selected = same >= 0 ? same : 0;
-                devices.Items.Clear(); devices.IsEnabled = readings.Count > 0;
-                for (int i = 0; i < readings.Count; i++)
-                {
-                    int index = i; var r = readings[i];
-                    devices.Items.Add(Item(r.Name + " · " + (r.Percent.HasValue ? r.Percent + "%" : r.Detail ?? "unknown"), delegate { selected = index; Display(); }));
-                }
-                Display();
+                bool changed = !SameVisibleReadings(readings, latest);
+                readings = latest;
+                NotifyLowBattery();
+                if (changed || state.Text == "Checking devices") Display();
+                bool incomplete = latest.Count == 0 || latest.Exists(r => r.NeedsIdentity);
+                if (incomplete && discoveryAttempts < 5) { int[] delays = { 2, 5, 10, 20, 30 }; ScheduleDiscovery(delays[discoveryAttempts++]); }
+                else if (!incomplete) { discoveryAttempts = 0; discoveryTimer.Stop(); }
             }
             catch { state.Text = "Unable to read battery · try Refresh"; }
             finally { busy = false; refresh.IsEnabled = true; refresh.Content = "Refresh"; }
         }
+        void NotifyLowBattery()
+        {
+            if (demoMode || exiting) return;
+            var alerts = lowBatteryAlerts.Evaluate(readings, lowBatteryNotifications);
+            SaveAlertHistory();
+            if (alerts.Count == 0) return;
+            string message = "";
+            foreach (var reading in alerts)
+            {
+                string line = reading.Name + " is at " + reading.Percent.Value + "%.";
+                if (message.Length + line.Length > 210) { message += "\nMore devices have low battery. Open VoltHUD to view them."; break; }
+                message += (message.Length == 0 ? "" : "\n") + line;
+            }
+            ShowLowBatteryNotification(message);
+        }
+        bool ShowLowBatteryNotification(string message)
+        {
+            if (exiting || trayDisposed) return false;
+            try { tray.ShowBalloonTip(10000, "VoltHUD · Low battery", message, Forms.ToolTipIcon.Warning); return true; }
+            catch (System.ComponentModel.Win32Exception) { return false; }
+            catch (InvalidOperationException) { return false; }
+        }
         void Display()
         {
-            if (readings.Count == 0)
+            BuildRows(deviceRows, readings);
+            UpdateWidgetSize();
+            state.Text = readings.Count == 0 ? "No connected devices found" : readings.Count + (demoMode ? " sample devices" : readings.Count == 1 ? " connected device" : " connected devices");
+            string text = (demoMode ? "VoltHUD simulation · " : "VoltHUD · ") + readings.Count + " devices";
+            if (readings.Count == 1) text = "VoltHUD · " + readings[0].Name + " · " + (readings[0].Percent.HasValue ? readings[0].Percent + "%" : "unknown");
+            tray.Text = text.Length > 63 ? text.Substring(0, 63) : text; Title = text;
+        }
+        void SaveAlertHistory()
+        {
+            if (demoMode || !lowBatteryAlerts.Changed) return;
+            string temporary = alertHistoryPath + ".tmp";
+            try
             {
-                deviceName.Text = "No battery reading"; level.Text = "—"; bar.Width = 0;
-                state.Text = "Wake your device or connect its receiver";
-                state.FontSize = 9; dot.Fill = Brush("#788391"); tray.Text = "VoltHUD — no battery reading";
-                ((TextBlock)root.FindName("Percent")).Visibility = Visibility.Collapsed;
+                Directory.CreateDirectory(Path.GetDirectoryName(alertHistoryPath));
+                File.WriteAllLines(temporary, lowBatteryAlerts.Export());
+                if (File.Exists(alertHistoryPath)) File.Replace(temporary, alertHistoryPath, null);
+                else File.Move(temporary, alertHistoryPath);
+                lowBatteryAlerts.MarkSaved();
+            }
+            catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+        void DisposeTray()
+        {
+            if (trayDisposed) return;
+            trayDisposed = true;
+            tray.Visible = false;
+            var icon = tray.Icon;
+            tray.Dispose();
+            if (icon != null) icon.Dispose();
+        }
+        static bool SameVisibleReadings(List<BatteryReading> left, List<BatteryReading> right)
+        {
+            if (left.Count != right.Count) return false;
+            for (int i = 0; i < left.Count; i++)
+            {
+                var a = left[i]; var b = right[i];
+                if (a.Key != b.Key || a.Name != b.Name || a.Kind != b.Kind || a.Percent != b.Percent || a.State != b.State || a.Detail != b.Detail) return false;
+            }
+            return true;
+        }
+        void UpdateWidgetSize()
+        {
+            double naturalHeight = 134 + 88 * Math.Max(1, readings.Count);
+            surface.Height = naturalHeight;
+            double scale = Math.Min(widgetScale, Math.Max(0.2, (SystemParameters.WorkArea.Height - 36) / naturalHeight));
+            Width = 346 * scale; Height = naturalHeight * scale;
+            if (Top + Height > SystemParameters.WorkArea.Bottom - 12) Top = Math.Max(SystemParameters.WorkArea.Top, SystemParameters.WorkArea.Bottom - Height - 12);
+        }
+        static void BuildRows(StackPanel panel, List<BatteryReading> items)
+        {
+            panel.Children.Clear();
+            if (items.Count == 0)
+            {
+                panel.Children.Add(CreateDeviceRow(new BatteryReading { Name = "No devices connected", State = "Wake your device or connect its receiver", Kind = "device" }));
                 return;
             }
-            var r = readings[selected];
-            deviceName.Text = r.Name; deviceName.ToolTip = readings.Count > 1 ? "Use Options → Devices to switch peripherals" : r.Name;
-            level.Text = r.Percent.HasValue ? r.Percent.Value.ToString(CultureInfo.InvariantCulture) : "—";
-            ((TextBlock)root.FindName("Percent")).Visibility = r.Percent.HasValue ? Visibility.Visible : Visibility.Collapsed;
-            var color = r.Percent.HasValue && r.Percent <= 15 ? Brush("#FFAA7A") : Brush("#00B8FC");
-            bar.Background = color; bar.Width = r.Percent.HasValue ? 278.0 * r.Percent.Value / 100.0 : 0;
-            dot.Fill = r.Percent.HasValue ? color : Brush("#788391"); state.FontSize = 11; state.Text = r.State;
-            state.ToolTip = "Updated " + r.Updated.ToString("T") + (r.Detail == null ? "" : "\n" + r.Detail);
-            DrawDevice(DeviceKind.Resolve(r.Name, r.Kind));
-            string text = "VoltHUD · " + r.Name + " · " + (r.Percent.HasValue ? r.Percent + "%" : "unknown");
-            tray.Text = text.Length > 63 ? text.Substring(0, 63) : text;
-            Title = text;
-            AutomationPropertiesSet(r);
+            foreach (var reading in items) panel.Children.Add(CreateDeviceRow(reading));
         }
-        void DrawDevice(string kind)
+        static Border CreateDeviceRow(BatteryReading reading)
         {
-            var canvas = (Canvas)root.FindName("DeviceIcon"); canvas.Children.Clear();
-            canvas.Children.Add(new Image { Source = DeviceIcons.Get(kind), Width = 72, Height = 68, Stretch = Stretch.Uniform });
+            var row = new Grid { Margin = new Thickness(0, 10, 0, 10), VerticalAlignment = VerticalAlignment.Center };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(56) });
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            row.RowDefinitions.Add(new RowDefinition { Height = new GridLength(25) });
+            row.RowDefinitions.Add(new RowDefinition { Height = new GridLength(19) });
+            row.RowDefinitions.Add(new RowDefinition { Height = new GridLength(13) });
+            var image = new Image { Source = DeviceIcons.Get(DeviceKind.Resolve(reading.Name, reading.Kind)), Width = 46, Height = 54, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left };
+            Grid.SetRowSpan(image, 3); row.Children.Add(image);
+            var name = new TextBlock { Text = reading.Name, FontSize = 12.5, FontWeight = FontWeights.Medium, Foreground = Brush("#E8ECF2"), Margin = new Thickness(0, 3, 54, 0), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = reading.Name };
+            Grid.SetColumn(name, 1); row.Children.Add(name);
+            var color = reading.Percent.HasValue && reading.Percent.Value <= 15 ? Brush("#FFAA7A") : Brush("#00B8FC");
+            var percent = new TextBlock { Text = reading.Percent.HasValue ? reading.Percent + "%" : "—", FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = reading.Percent.HasValue ? Brush("#F4F7FC") : Brush("#8791A2"), HorizontalAlignment = HorizontalAlignment.Right };
+            Grid.SetColumn(percent, 1); row.Children.Add(percent);
+            var status = new TextBlock { Text = reading.State, FontSize = 10.5, Foreground = Brush("#A0AABA"), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = reading.Detail ?? reading.State };
+            Grid.SetColumn(status, 1); Grid.SetRow(status, 1); row.Children.Add(status);
+            var track = new Grid { Height = 4, VerticalAlignment = VerticalAlignment.Center, ClipToBounds = true };
+            track.Children.Add(new Border { Background = Brush("#303743"), CornerRadius = new CornerRadius(2) });
+            track.Children.Add(new Border { Background = color, CornerRadius = new CornerRadius(2), Width = reading.Percent.HasValue ? 220 * reading.Percent.Value / 100.0 : 0, HorizontalAlignment = HorizontalAlignment.Left });
+            Grid.SetColumn(track, 1); Grid.SetRow(track, 2); row.Children.Add(track);
+            var border = new Border { Height = 88, BorderBrush = Brush("#2C333E"), BorderThickness = new Thickness(0, 0, 0, 1), Child = row };
+            System.Windows.Automation.AutomationProperties.SetName(border, reading.Name + ", " + (reading.Percent.HasValue ? reading.Percent + " percent" : "battery unavailable") + ", " + reading.State);
+            return border;
         }
-        void AutomationPropertiesSet(BatteryReading r)
-        {
-            System.Windows.Automation.AutomationProperties.SetName(level, r.Percent.HasValue ? r.Percent + " percent battery" : "Battery level unknown");
-        }
-        static SolidColorBrush Brush(string value) { return (SolidColorBrush)new BrushConverter().ConvertFromString(value); }
+        static SolidColorBrush Brush(string value) { return ThemePalette.Brush(value); }
         void ClampPosition()
         {
             var rect = new System.Drawing.Rectangle((int)Left, (int)Top, (int)Width, (int)Height);
@@ -197,22 +381,73 @@ namespace VoltHUD
             {
                 var lines = File.ReadAllLines(settingsPath); double x, y;
                 if (lines.Length >= 3 && Double.TryParse(lines[0], NumberStyles.Float, CultureInfo.InvariantCulture, out x) && Double.TryParse(lines[1], NumberStyles.Float, CultureInfo.InvariantCulture, out y) && !Double.IsNaN(x) && !Double.IsNaN(y) && !Double.IsInfinity(x) && !Double.IsInfinity(y)) { Left = x; Top = y; Topmost = lines[2] == "True"; }
+                double savedOpacity;
+                if (lines.Length >= 4 && Double.TryParse(lines[3], NumberStyles.Float, CultureInfo.InvariantCulture, out savedOpacity) && !Double.IsNaN(savedOpacity) && !Double.IsInfinity(savedOpacity)) Opacity = Math.Max(0.2, Math.Min(1.0, savedOpacity));
+                double savedScale;
+                if (lines.Length >= 5 && Double.TryParse(lines[4], NumberStyles.Float, CultureInfo.InvariantCulture, out savedScale) && !Double.IsNaN(savedScale) && !Double.IsInfinity(savedScale))
+                {
+                    widgetScale = Math.Max(0.75, Math.Min(2.0, savedScale));
+                    Width = 346 * widgetScale; Height = 222 * widgetScale;
+                }
+                if (lines.Length >= 6) StartMinimized = lines[5] == "True";
+                if (lines.Length >= 7 && (lines[6] == "Dark" || lines[6] == "Light" || lines[6] == "System")) themeMode = lines[6];
+                  if (lines.Length >= 8) lowBatteryNotifications = lines[7] == "True";
             }
             catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
         void SaveSettings()
         {
-            try { Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)); File.WriteAllLines(settingsPath, new[] { Left.ToString(CultureInfo.InvariantCulture), Top.ToString(CultureInfo.InvariantCulture), Topmost.ToString() }); }
+            if (demoMode) return;
+            try { Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)); File.WriteAllLines(settingsPath, new[] { Left.ToString(CultureInfo.InvariantCulture), Top.ToString(CultureInfo.InvariantCulture), Topmost.ToString(), Opacity.ToString(CultureInfo.InvariantCulture), widgetScale.ToString(CultureInfo.InvariantCulture), StartMinimized.ToString(), themeMode, lowBatteryNotifications.ToString() }); }
             catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+        public static List<BatteryReading> SampleDevices()
+        {
+            return new List<BatteryReading> {
+                new BatteryReading { Key = "demo-mouse", Name = "Wireless mouse", Kind = "mouse", Percent = 77, State = "On battery", Updated = DateTime.Now },
+                new BatteryReading { Key = "demo-keyboard", Name = "Wireless keyboard", Kind = "keyboard", Percent = 64, State = "On battery", Updated = DateTime.Now },
+                new BatteryReading { Key = "demo-headset", Name = "Wireless gaming headset", Kind = "headset", Percent = 43, State = "Charging", Charging = true, Updated = DateTime.Now },
+                new BatteryReading { Key = "demo-controller", Name = "Wireless controller", Kind = "controller", Percent = 28, State = "Bluetooth · battery level", Updated = DateTime.Now },
+                new BatteryReading { Key = "demo-speaker", Name = "Bluetooth speaker", Kind = "speaker", Percent = 12, State = "Bluetooth · battery level", Updated = DateTime.Now },
+                new BatteryReading { Key = "demo-mic", Name = "Wireless microphone", Kind = "microphone", Percent = 91, State = "On battery", Updated = DateTime.Now },
+                new BatteryReading { Key = "demo-camera", Name = "Bluetooth camera", Kind = "webcam", Percent = null, State = "Battery unavailable", Detail = "This sample device does not report a battery level.", Updated = DateTime.Now },
+                new BatteryReading { Key = "demo-unknown", Name = "Unknown Bluetooth device", Kind = "device", Percent = null, State = "Battery unavailable", Updated = DateTime.Now }
+            };
         }
         public void RenderPreview(string file)
         {
-            readings.Add(new BatteryReading { Name = "Logitech PRO X 2", Percent = 77, State = "On battery", Kind = "mouse", Updated = DateTime.Now }); Display();
-            root.Measure(new Size(Width, Height)); root.Arrange(new Rect(0, 0, Width, Height)); root.UpdateLayout();
-            var bitmap = new RenderTargetBitmap((int)Width * 2, (int)Height * 2, 192, 192, PixelFormats.Pbgra32); bitmap.Render(root);
+            var preview = (Grid)XamlReader.Parse(Layout);
+            ThemePalette.Apply(preview);
+            preview.SetValue(System.Windows.Documents.TextElement.FontFamilyProperty, new FontFamily("Segoe UI"));
+            var samples = SampleDevices();
+            BuildRows((StackPanel)preview.FindName("DeviceRows"), samples);
+            ((TextBlock)preview.FindName("BrandCaption")).Text = "VOLTHUD · SIMULATION";
+            ((TextBlock)preview.FindName("Summary")).Text = samples.Count + " sample devices";
+            double height = 134 + 88 * samples.Count;
+            preview.Measure(new Size(346, height)); preview.Arrange(new Rect(0, 0, 346, height)); preview.UpdateLayout();
+            var bitmap = new RenderTargetBitmap(692, (int)height * 2, 192, 192, PixelFormats.Pbgra32); bitmap.Render(preview);
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
             using (var stream = File.Create(file)) encoder.Save(stream);
-            tray.Dispose();
+            DisposeTray();
+        }
+        public void RenderSettingsPreview(string file, string previewTheme = null)
+        {
+            ThemePalette.Configure(previewTheme ?? themeMode);
+            Border preview;
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("VoltHUD.Settings.xaml")) preview = (Border)XamlReader.Load(stream);
+            ThemePalette.Apply(preview);
+            ((RadioButton)preview.FindName("Theme" + (previewTheme ?? themeMode))).IsChecked = true;
+            ((Slider)preview.FindName("OpacitySlider")).Value = 80;
+            ((TextBlock)preview.FindName("OpacityValue")).Text = "80%";
+            ((Slider)preview.FindName("SizeSlider")).Value = 100;
+            ((CheckBox)preview.FindName("AlwaysOnTop")).IsChecked = true;
+            preview.Measure(new Size(320, Double.PositiveInfinity));
+            var size = preview.DesiredSize;
+            preview.Arrange(new Rect(0, 0, size.Width, size.Height)); preview.UpdateLayout();
+            var bitmap = new RenderTargetBitmap((int)Math.Ceiling(size.Width * 2), (int)Math.Ceiling(size.Height * 2), 192, 192, PixelFormats.Pbgra32); bitmap.Render(preview);
+            var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using (var stream = File.Create(file)) encoder.Save(stream);
+            DisposeTray();
         }
         static System.Drawing.Icon MakeIcon()
         {
@@ -242,17 +477,24 @@ namespace VoltHUD
                     BatteryMonitor.Log = lines.Add; var result = BatteryMonitor.Scan();
                     lines.Add("Peripherals found: " + result.Count); File.WriteAllLines(args[1], lines); return;
                 }
+                bool demo = Array.IndexOf(args, "--demo") >= 0;
                 bool created;
-                using (var mutex = new Mutex(true, "Local\\VoltHUD.Instance", out created))
-                using (var activate = new EventWaitHandle(false, EventResetMode.AutoReset, "Local\\VoltHUD.Show"))
+                using (var mutex = new Mutex(true, demo ? "Local\\VoltHUD.Demo.Instance" : "Local\\VoltHUD.Instance", out created))
+                using (var activate = new EventWaitHandle(false, EventResetMode.AutoReset, demo ? "Local\\VoltHUD.Demo.Show" : "Local\\VoltHUD.Show"))
                 {
                     if (!created) { activate.Set(); return; }
                     var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
-                    var widget = new Widget();
+                    var widget = new Widget(demo);
                     if (args.Length == 2 && args[0] == "--preview") { widget.RenderPreview(args[1]); return; }
-                    if (Array.IndexOf(args, "--windowed") >= 0) widget.ShowInTaskbar = true;
+                    if (args.Length == 2 && args[0] == "--settings-preview") { widget.RenderSettingsPreview(args[1]); return; }
+                    if (args.Length == 2 && args[0] == "--settings-preview-light") { widget.RenderSettingsPreview(args[1], "Light"); return; }
+                    if (args.Length == 2 && args[0] == "--settings-preview-windows") { widget.RenderSettingsPreview(args[1], "System"); return; }
+                    if (demo || Array.IndexOf(args, "--windowed") >= 0) widget.ShowInTaskbar = true;
                     widget.ListenForActivation(activate);
-                    app.Run(widget);
+                    app.MainWindow = widget;
+                    bool startHidden = !demo && (Array.IndexOf(args, "--tray") >= 0 || widget.StartMinimized && Array.IndexOf(args, "--show") < 0);
+                    if (startHidden) { widget.StartInTray(); app.Run(); }
+                    else app.Run(widget);
                 }
             }
             catch (Exception ex) { MessageBox.Show("VoltHUD couldn't start.\n\n" + ex.Message, "VoltHUD", MessageBoxButton.OK, MessageBoxImage.Error); }

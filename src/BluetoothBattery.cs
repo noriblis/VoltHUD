@@ -20,8 +20,13 @@ namespace VoltHUD
         {
             var clock = Stopwatch.StartNew();
             while (operation.Status == AsyncStatus.Started && clock.ElapsedMilliseconds < timeout) Thread.Sleep(15);
-            if (operation.Status == AsyncStatus.Completed) return operation.GetResults();
+            if (operation.Status == AsyncStatus.Completed)
+            {
+                try { return operation.GetResults(); }
+                finally { operation.Close(); }
+            }
             if (operation.Status == AsyncStatus.Started) operation.Cancel();
+            if (operation.Status != AsyncStatus.Started) operation.Close();
             return null;
         }
         public static List<BatteryReading> Connected(List<BatteryReading> windowsValues)
