@@ -1,13 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="520" height="142" viewBox="0 0 520 142" role="img" aria-labelledby="title desc">
-  <title id="title">VoltHUD tray icon hover preview</title>
-  <desc id="desc">Illustrative Windows tooltip reading VoltHUD, Wireless mouse, 77 percent above the blue battery tray icon.</desc>
-  <rect width="520" height="142" rx="14" fill="#10141c"/>
-  <rect x="26" y="20" width="468" height="40" rx="6" fill="#2b2b2b" stroke="#505050"/>
-  <text x="42" y="45" fill="#f5f5f5" font-family="Segoe UI, sans-serif" font-size="15">VoltHUD · Wireless mouse · 77%</text>
-  <path d="M250 60 L258 68 L266 60" fill="#2b2b2b" stroke="#505050"/>
-  <path d="M251 60 H265" stroke="#2b2b2b" stroke-width="2"/>
-  <rect x="224" y="80" width="68" height="46" rx="8" fill="#252b35"/>
-  <g transform="translate(242 87)">
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="420" viewBox="0 0 600 420" role="img" aria-labelledby="title desc">
+  <title id="title">VoltHUD tray hover with eight connected devices</title>
+  <desc id="desc">Sample devices: mouse 77%, keyboard 64%, headset 43%, controller 28%, speaker 12%, microphone 91%, webcam and unknown Bluetooth device with unavailable battery levels. The separate tray tooltip reads VoltHUD, 8 devices.</desc>
+  <rect width="600" height="420" rx="14" fill="#10141c"/>
+  <g font-family="Segoe UI, sans-serif">
+    <text x="24" y="34" fill="#f4f7fc" font-size="17" font-weight="600">Eight connected devices</text>
+    <text x="24" y="56" fill="#a0aaba" font-size="12">Sample device list for this example</text>
+    <rect x="20" y="72" width="560" height="204" rx="12" fill="#171b23" stroke="#343b47"/>
+    <path d="M300 88 V260 M36 124 H564 M36 172 H564 M36 220 H564" stroke="#2c333e"/>
+    <g fill="#e8ecf2" font-size="14">
+      <text x="36" y="105">Wireless mouse</text><text x="270" y="105" text-anchor="end" fill="#00b8fc">77%</text>
+      <text x="316" y="105">Wireless keyboard</text><text x="564" y="105" text-anchor="end" fill="#00b8fc">64%</text>
+      <text x="36" y="153">Wireless headset</text><text x="270" y="153" text-anchor="end" fill="#00b8fc">43%</text>
+      <text x="316" y="153">Game controller</text><text x="564" y="153" text-anchor="end" fill="#00b8fc">28%</text>
+      <text x="36" y="201">Bluetooth speaker</text><text x="270" y="201" text-anchor="end" fill="#ffaa7a">12%</text>
+      <text x="316" y="201">Wireless microphone</text><text x="564" y="201" text-anchor="end" fill="#00b8fc">91%</text>
+      <text x="36" y="249">Wireless webcam</text><text x="270" y="249" text-anchor="end" fill="#8791a2">—</text>
+      <text x="316" y="249">Unknown Bluetooth device</text><text x="564" y="249" text-anchor="end" fill="#8791a2">—</text>
+    </g>
+    <text x="24" y="305" fill="#a0aaba" font-size="12">Tray hover</text>
+    <rect x="180" y="294" width="240" height="40" rx="6" fill="#2b2b2b" stroke="#505050"/>
+    <text x="300" y="320" fill="#f5f5f5" font-size="15" text-anchor="middle">VoltHUD · 8 devices</text>
+  </g>
+  <path d="M292 334 L300 342 L308 334" fill="#2b2b2b" stroke="#505050"/>
+  <path d="M293 334 H307" stroke="#2b2b2b" stroke-width="2"/>
+  <rect x="266" y="356" width="68" height="46" rx="8" fill="#252b35"/>
+  <g transform="translate(284 363)">
     <rect x="3" y="8" width="23" height="16" fill="none" stroke="#00b8fc" stroke-width="3"/>
     <rect x="28" y="12" width="2" height="8" fill="#fff"/>
     <rect x="7" y="12" width="15" height="8" fill="#00b8fc"/>
