@@ -6,10 +6,10 @@ if (!(Test-Path -LiteralPath $executable)) { throw 'Run build.ps1 first.' }
 if ([Diagnostics.FileVersionInfo]::GetVersionInfo($executable).FileVersion -ne '0.1.1.0') { throw 'Unexpected executable version.' }
 New-Item -ItemType Directory -Force $stage, (Join-Path $stage 'assets') | Out-Null
 Copy-Item -LiteralPath $executable -Destination (Join-Path $stage 'VoltHUD.exe') -Force
-foreach ($name in @('README.md','RELEASE_NOTES.md','SECURITY.md','LICENSE','LOCAL_REVIEW.md','MEMORY.md')) {
+foreach ($name in @('README.md','RELEASE_NOTES.md','SECURITY.md','LICENSE','LOCAL_REVIEW.md','MEMORY.md','CODE_SIGNING_POLICY.md')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $stage $name) -Force
 }
-foreach ($name in @('app-badge.png','preview.png')) {
+foreach ($name in @('app-badge.png','preview.png','README.md')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot ('assets\' + $name)) -Destination (Join-Path $stage ('assets\' + $name)) -Force
 }
 $exeHash = (Get-FileHash -LiteralPath (Join-Path $stage 'VoltHUD.exe') -Algorithm SHA256).Hash.ToLowerInvariant()

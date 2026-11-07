@@ -1,0 +1,129 @@
+name: Signed Windows preview
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: New preview tag; never reuse a published tag
+        required: true
+        default: v0.1.1-preview.1
+      publish:
+        description: Publish the verified signed package as a new GitHub prerelease
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: volthud-signpath-release
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    if: github.repository == 'noriblis/VoltHUD' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Validate onboarding and release tag
+        shell: powershell
+        env:
+          SIGNPATH_ENABLED: ${{ vars.SIGNPATH_ENABLED }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          SIGNPATH_ARTIFACT_CONFIGURATION_SLUG: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          SIGNPATH_EXPECTED_PUBLISHER: ${{ vars.SIGNPATH_EXPECTED_PUBLISHER }}
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ($env:SIGNPATH_ENABLED -ne 'true') { throw 'SignPath approval and configuration are required. See signpath/SETUP.md.' }
+          foreach ($name in @('SIGNPATH_ORGANIZATION_ID','SIGNPATH_PROJECT_SLUG','SIGNPATH_SIGNING_POLICY_SLUG','SIGNPATH_ARTIFACT_CONFIGURATION_SLUG','SIGNPATH_EXPECTED_PUBLISHER','SIGNPATH_API_TOKEN')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { throw ('Missing setting: ' + $name) }
+          }
+          if ($env:RELEASE_TAG -notmatch '^v0\.1\.1-preview(\.[0-9]+)?$') { throw 'Update app and package versions together before signing a different version.' }
+          $headers = @{ Authorization = 'Bearer ' + $env:GH_TOKEN; 'User-Agent' = 'VoltHUD-release' }
+          try {
+            $existing = Invoke-RestMethod -Uri ('https://api.github.com/repos/noriblis/VoltHUD/git/ref/tags/' + $env:RELEASE_TAG) -Headers $headers
+          } catch { if ([int]$_.Exception.Response.StatusCode -ne 404) { throw } }
+          if ($existing) { throw 'This tag already exists; use a new one.' }
+      - name: Test and build from source
+        shell: powershell
+        run: |
+          .\test.ps1
+          .\build.ps1
+          .\ui-test.ps1
+      - name: Upload unsigned executable for origin verification
+        id: unsigned
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: volthud-unsigned
+          path: dist/VoltHUD.exe
+          if-no-files-found: error
+          retention-days: 7
+      - name: Submit request and wait for manual SignPath approval
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: signed
+          parameters: |
+            version: "0.1.1.0"
+      - name: Verify and package signed output
+        shell: powershell
+        env:
+          EXPECTED_PUBLISHER: ${{ vars.SIGNPATH_EXPECTED_PUBLISHER }}
+        run: |
+          .\tools\Verify-SignedArtifact.ps1 -Path signed\VoltHUD.exe -ExpectedPublisher $env:EXPECTED_PUBLISHER -ExpectedVersion '0.1.1.0'
+          Copy-Item -LiteralPath signed\VoltHUD.exe -Destination dist\VoltHUD.exe -Force
+          $signature = Get-AuthenticodeSignature signed\VoltHUD.exe
+          $notice = 'Signed build. Publisher: ' + $env:EXPECTED_PUBLISHER + '. Certificate thumbprint: ' + $signature.SignerCertificate.Thumbprint + '. A signature does not guarantee immediate SmartScreen reputation.'
+          foreach ($document in @('README.md','RELEASE_NOTES.md')) {
+            $text = Get-Content -LiteralPath $document -Raw
+            $text = $text.Replace('This preview is unsigned.', $notice).Replace('This is an unsigned preview.', $notice)
+            [IO.File]::WriteAllText((Join-Path (Get-Location) $document), $text, [Text.UTF8Encoding]::new($false))
+          }
+          .\package.ps1
+          $source = (Get-FileHash signed\VoltHUD.exe -Algorithm SHA256).Hash
+          $packaged = (Get-FileHash release\0.1.1-preview\VoltHUD.exe -Algorithm SHA256).Hash
+          if ($source -ne $packaged) { throw 'Packaged executable changed after signing.' }
+      - name: Upload verified signed release package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: volthud-signed-release
+          path: |
+            release/0.1.1-preview/VoltHUD-windows.zip
+            release/0.1.1-preview/VoltHUD.exe
+            release/0.1.1-preview/SHA256SUMS.txt
+            release/0.1.1-preview/RELEASE_NOTES.md
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    if: inputs.publish
+    needs: sign
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: volthud-signed-release
+          path: release
+      - name: Publish new signed preview
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          gh release create $env:RELEASE_TAG release/VoltHUD-windows.zip release/VoltHUD.exe release/SHA256SUMS.txt release/RELEASE_NOTES.md --target $env:GITHUB_SHA --prerelease --title "VoltHUD $env:RELEASE_TAG (signed)" --notes-file release/RELEASE_NOTES.md
+          if ($LASTEXITCODE -ne 0) { throw 'Signed release publication failed.' }

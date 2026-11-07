@@ -8,6 +8,10 @@ A small, quiet Windows desktop widget for connected device battery levels.
 
 ![VoltHUD preview](assets/preview.png)
 
+## Code signing policy
+
+See the [Code signing policy](CODE_SIGNING_POLICY.md). SignPath Foundation onboarding is being prepared; the current release remains unsigned. Planned signing is subject to approval and manual release authorization. [Integration setup](https://github.com/noriblis/VoltHUD/blob/main/signpath/SETUP.md).
+
 ## Download
 
 Download **VoltHUD-windows.zip** from the [0.1.1 preview release](https://github.com/noriblis/VoltHUD/releases/tag/v0.1.1-preview). Extract the entire ZIP to a permanent folder and open **VoltHUD.exe**. No installer, administrator access, account, or companion software is required. Windows 10/11 with the built-in .NET Framework 4.8 is required. Windows on ARM has not been tested.
@@ -80,7 +84,7 @@ Routine UI checks keep simulated widgets hidden. The visible stress test require
 
 Independent project. Device and manufacturer names identify connected hardware; they do not imply affiliation or endorsement.
 
-Code is licensed under the [MIT License](LICENSE). The badge and device artwork were supplied by the project owner for VoltHUD.
+Code and supplied artwork are distributed under the [MIT License](LICENSE). See [artwork provenance](assets/README.md).
 
 Start with Windows is opt-in. Enabling it creates only the current user's VoltHUD Run entry; disabling it removes that entry. It requires no administrator access.
 
