@@ -40,6 +40,12 @@ Blue accents use `#00B8FC`. A low numeric battery level uses an orange accent. U
 
 Open **⋯** to adjust the widget's appearance, startup behaviour and low battery notifications. The preview shows sample settings in the Dark theme.
 
+### Tray hover preview
+
+<img src="assets/tray-hover-preview.svg" alt="Illustrative VoltHUD tray tooltip showing Wireless mouse at 77 percent" width="520">
+
+Hover over the blue battery tray icon for a quick status. With one device, the tooltip shows its name and battery percentage; with multiple devices, it shows the device count. This is an illustrative preview—Windows controls the tooltip's appearance. Double-click the icon to show the widget, or right-click it to open settings.
+
 ## Compatibility
 
 VoltHUD discovers battery capabilities instead of maintaining a hardcoded list of supported model names. It supports connected Bluetooth devices from any brand and peripherals using the battery interfaces listed below. Compatibility depends on each device and Windows; some devices use proprietary formats that are not implemented or expose no usable battery information.
