@@ -9,7 +9,7 @@ Copy-Item -LiteralPath $executable -Destination (Join-Path $stage 'VoltHUD.exe')
 foreach ($name in @('README.md','RELEASE_NOTES.md','SECURITY.md','LICENSE','LOCAL_REVIEW.md','MEMORY.md','CODE_SIGNING_POLICY.md')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $stage $name) -Force
 }
-foreach ($name in @('app-badge.png','preview.png','README.md')) {
+foreach ($name in @('app-badge.png','preview.png','settings-preview.png','README.md')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot ('assets\' + $name)) -Destination (Join-Path $stage ('assets\' + $name)) -Force
 }
 $exeHash = (Get-FileHash -LiteralPath (Join-Path $stage 'VoltHUD.exe') -Algorithm SHA256).Hash.ToLowerInvariant()

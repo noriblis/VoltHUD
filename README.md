@@ -34,6 +34,12 @@ Download **VoltHUD-windows.zip** from the [0.1.1 preview release](https://github
 
 Blue accents use `#00B8FC`. A low numeric battery level uses an orange accent. Unknown battery levels display a dash. Coarse levels such as “Good” remain words; voltage-derived levels are explicitly labelled as estimates.
 
+### Settings preview
+
+<img src="assets/settings-preview.png" alt="VoltHUD settings showing theme, opacity, size, startup and low battery notification controls" width="320">
+
+Open **⋯** to adjust the widget's appearance, startup behaviour and low battery notifications. The preview shows sample settings in the Dark theme.
+
 ## Compatibility
 
 VoltHUD discovers battery capabilities instead of maintaining a hardcoded list of supported model names. It supports connected Bluetooth devices from any brand and peripherals using the battery interfaces listed below. Compatibility depends on each device and Windows; some devices use proprietary formats that are not implemented or expose no usable battery information.
