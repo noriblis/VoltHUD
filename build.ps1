@@ -3,7 +3,7 @@ $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $wpf = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\WPF'
 $destination = Join-Path $PSScriptRoot 'dist'
 New-Item -ItemType Directory -Force $destination | Out-Null
-& (Join-Path $PSScriptRoot 'make-icon.ps1') -ImagePath (Join-Path $PSScriptRoot 'assets\app-badge.png') -Destination (Join-Path $destination 'VoltHUD.ico')
+& (Join-Path $PSScriptRoot 'make-icon.ps1') -ImagePath (Join-Path $PSScriptRoot 'assets\app-icon.png') -Destination (Join-Path $destination 'VoltHUD.ico')
 $references = @('PresentationFramework.dll','PresentationCore.dll','WindowsBase.dll','System.Xaml.dll') | ForEach-Object {
     $candidate = Join-Path $wpf $_
     if (!(Test-Path -LiteralPath $candidate)) { $candidate = Join-Path (Split-Path $wpf) $_ }

@@ -1,4 +1,4 @@
-# VoltHUD 0.1.0 preview
+# VoltHUD 0.1.1 preview
 
 Portable desktop battery widget for Windows 10/11.
 

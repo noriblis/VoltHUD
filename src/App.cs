@@ -18,8 +18,8 @@ using Forms = System.Windows.Forms;
 [assembly: AssemblyDescription("A quiet battery widget for Logitech and Bluetooth peripherals")]
 [assembly: AssemblyCompany("VoltHUD contributors")]
 [assembly: AssemblyProduct("VoltHUD")]
-[assembly: AssemblyVersion("0.1.0.0")]
-[assembly: AssemblyFileVersion("0.1.0.0")]
+[assembly: AssemblyVersion("0.1.1.0")]
+[assembly: AssemblyFileVersion("0.1.1.0")]
 [assembly: AssemblyCopyright("Copyright 2026 VoltHUD contributors")]
 
 namespace VoltHUD
@@ -78,6 +78,11 @@ namespace VoltHUD
         public Widget()
         {
             Title = "VoltHUD"; Width = 346; Height = 248;
+            using (var iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("VoltHUD.AppIcon.ico"))
+            {
+                var decoder = BitmapDecoder.Create(iconStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+                Icon = decoder.Frames[decoder.Frames.Count - 1]; Icon.Freeze();
+            }
             ResizeMode = ResizeMode.NoResize; WindowStyle = WindowStyle.None;
             AllowsTransparency = true; Background = Brushes.Transparent;
             ShowInTaskbar = false; FontFamily = new FontFamily("Segoe UI");
@@ -94,7 +99,7 @@ namespace VoltHUD
             pin = Item("Always on top", delegate { Topmost = pin.IsChecked; SaveSettings(); });
             pin.IsCheckable = true; pin.IsChecked = Topmost; menu.Items.Add(pin);
             menu.Items.Add(new Separator());
-            menu.Items.Add(Item("About VoltHUD", delegate { MessageBox.Show(this, "VoltHUD 0.1.0 preview\n\nBattery levels for Logitech and Bluetooth peripherals.\nNo internet access or telemetry.\n\nDrag the header to move. Hide to keep it in the tray.\nOptions → Devices switches between peripherals.\nBattery refreshes every 60 seconds.\n\nIndependent project; not affiliated with Logitech.", "About VoltHUD", MessageBoxButton.OK, MessageBoxImage.Information); }));
+            menu.Items.Add(Item("About VoltHUD", delegate { MessageBox.Show(this, "VoltHUD 0.1.1 preview\n\nBattery levels for Logitech and Bluetooth peripherals.\nNo internet access or telemetry.\n\nDrag the header to move. Hide to keep it in the tray.\nOptions → Devices switches between peripherals.\nBattery refreshes every 60 seconds.\n\nIndependent project; not affiliated with Logitech.", "About VoltHUD", MessageBoxButton.OK, MessageBoxImage.Information); }));
             menu.Items.Add(Item("Quit", delegate { Exit(); }));
             root.ContextMenu = menu;
             ((Button)root.FindName("MenuButton")).Click += delegate { menu.PlacementTarget = (Button)root.FindName("MenuButton"); menu.IsOpen = true; };
@@ -233,7 +238,7 @@ namespace VoltHUD
             {
                 if (args.Length == 2 && args[0] == "--diagnose")
                 {
-                    var lines = new List<string> { "VoltHUD 0.1.0 battery diagnostic", "No serial numbers or device paths collected." };
+                    var lines = new List<string> { "VoltHUD 0.1.1 battery diagnostic", "No serial numbers or device paths collected." };
                     BatteryMonitor.Log = lines.Add; var result = BatteryMonitor.Scan();
                     lines.Add("Peripherals found: " + result.Count); File.WriteAllLines(args[1], lines); return;
                 }

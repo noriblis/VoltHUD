@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: New preview version tag (for example v0.1.0-preview)
+        description: New preview version tag (for example v0.1.1-preview)
         required: true
-        default: v0.1.0-preview
+        default: v0.1.1-preview
 
 permissions:
   contents: read
@@ -40,6 +40,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+-preview[.0-9]*$') { throw 'Use a new preview tag such as v0.1.0-preview' }
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+-preview[.0-9]*$') { throw 'Use a new preview tag such as v0.1.1-preview' }
           gh release create $env:RELEASE_TAG release/VoltHUD-windows.zip release/VoltHUD.exe release/SHA256SUMS.txt --target $env:GITHUB_SHA --prerelease --title "VoltHUD $env:RELEASE_TAG" --notes-file RELEASE_NOTES.md
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
